@@ -4,16 +4,11 @@ require 'date'
 
 #引数の定義
 opt = OptionParser.new
-params = {}
-opt.on('-m'){ |month| params[:m] = month }
-opt.on('-y'){ |year|  params[:y] = year }
-
-#引数の取り出し
-opt.parse!(ARGV)
+opt = ARGV.getopts('y:', 'm:')
 
 #引数が与えられた時だけ指定の年、月とする
-year = params[:y] ? opt.parse!(ARGV).map!(&:to_i).max : Time.now.year
-month = params[:m] ? opt.parse!(ARGV).map!(&:to_i).min : Time.now.month
+year = opt["y"] ? opt["y"].to_i : Time.now.year
+month = opt["m"] ? opt["m"].to_i : Time.now.month
 
 #calenderメソッド
 def calendar(year, month)
