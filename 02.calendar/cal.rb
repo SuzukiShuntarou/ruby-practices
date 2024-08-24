@@ -6,9 +6,9 @@ require 'date'
 opt = OptionParser.new
 opt = ARGV.getopts('y:', 'm:')
 
-#引数が与えられた時だけ指定の年、月とする
-year = opt["y"] ? opt["y"].to_i : Time.now.year
-month = opt["m"] ? opt["m"].to_i : Time.now.month
+#引数が与えられた時だけ指定の年、月とする、ぼっち演算子&.でnilとそうでない時を判断する。
+year = opt["y"]&.to_i || Time.now.year
+month = opt["m"]&.to_i || Time.now.month
 
 #calenderメソッド
 def calendar(year, month)
