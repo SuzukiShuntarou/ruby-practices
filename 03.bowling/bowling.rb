@@ -18,26 +18,21 @@ scores.each do |score|
 end
 
 # 9フレーム目まで２投ごとにframes配列へ保存
-frames = []
-shots.shift(NINE_FRAME * TWO_SHOTS).each_slice(TWO_SHOTS).with_index do |shot, frame|
-  frames[frame] = shot
-end
+frames = shots.shift(NINE_FRAME * TWO_SHOTS).each_slice(TWO_SHOTS).to_a
 
 # 10フレーム目は残りのスコア全てframes配列へ保存
 frames << shots
 
 # ポイントの計算
-point = 0
-frames.each.with_index(1) do |frame_point, frame_count|
+point = frames.each.with_index(1).sum do |frame_point, frame_count|
   if frame_point.sum < 10 || frame_count == 10
-    point += frame_point.sum
+    frame_point.sum
+  elsif frame_point[0] != 10 # spare
+    frame_point.sum + frames[frame_count][0]
+  elsif frames[frame_count][0] != 10 || frame_count == NINE_FRAME # 連続strikeでない
+    frame_point.sum + frames[frame_count][0] + frames[frame_count][1]
   else
-    point += 10 + frames[frame_count][0]
-    if frame_point[0] == 10 # strike
-      point += frames[frame_count][1]
-      # 1~8フレーム目、かつ、連続strikeの時はframes[frame_count][1]は0
-      point += frames[frame_count + 1][0] if frames[frame_count][0] == 10 && frame_count != NINE_FRAME
-    end
+    frame_point.sum + frames[frame_count][0] + frames[frame_count + 1][0]
   end
 end
 puts point
