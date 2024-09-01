@@ -25,14 +25,17 @@ frames << shots
 
 # ポイントの計算
 point = frames.each.with_index(1).sum do |frame_point, frame_count|
-  if frame_point.sum < 10 || frame_count == 10
-    frame_point.sum
-  elsif frame_point[0] != 10 # spare
-    frame_point.sum + frames[frame_count][0]
-  elsif frames[frame_count][0] != 10 || frame_count == NINE_FRAME # 連続strikeでない
-    frame_point.sum + frames[frame_count][0] + frames[frame_count][1]
+  common_calcu = frame_point.sum
+  next common_calcu if frame_point.sum < 10 || frame_count == 10
+
+  common_calcu += frames[frame_count][0]
+  next common_calcu if frame_point[0] != 10 # spare
+
+  # strike
+  if frames[frame_count][0] != 10 || frame_count == NINE_FRAME # 連続strikeでない
+    common_calcu + frames[frame_count][1]
   else
-    frame_point.sum + frames[frame_count][0] + frames[frame_count + 1][0]
+    common_calcu + frames[frame_count + 1][0]
   end
 end
 puts point
