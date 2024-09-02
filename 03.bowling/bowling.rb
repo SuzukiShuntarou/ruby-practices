@@ -24,18 +24,17 @@ frames = shots.shift(NINE_FRAME * TWO_SHOTS).each_slice(TWO_SHOTS).to_a
 frames << shots
 
 # ポイントの計算
-point = frames.each.with_index(1).sum do |frame_point, frame_count|
-  common_calcu = frame_point.sum
-  next common_calcu if frame_point.sum < 10 || frame_count == 10
+point = frames.each.with_index(1).sum do |frame, frame_count|
+  frame_sum = frame.sum
+  next frame_sum if frame.sum < 10 || frame_count == 10
 
-  common_calcu += frames[frame_count][0]
-  next common_calcu if frame_point[0] != 10 # spare
-
-  # strike
-  if frames[frame_count][0] != 10 || frame_count == NINE_FRAME # 連続strikeでない
-    common_calcu + frames[frame_count][1]
-  else
-    common_calcu + frames[frame_count + 1][0]
+  next_frame_first_shot_sum = frame_sum + frames[frame_count][0]
+  if frame[0] != 10 # spare
+    next_frame_first_shot_sum
+  elsif frames[frame_count][0] != 10 || frame_count == NINE_FRAME # 連続strikeでない
+    next_frame_first_shot_sum + frames[frame_count][1]
+  else #  連続strike
+    next_frame_first_shot_sum + frames[frame_count + 1][0]
   end
 end
 puts point
