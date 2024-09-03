@@ -29,12 +29,12 @@ point = frames.each.with_index(1).sum do |frame, frame_count|
   next frame_sum if frame.sum < 10 || frame_count == 10
 
   next_frame_first_shot_sum = frame_sum + frames[frame_count][0]
-  if frame[0] != 10 # spare
-    next_frame_first_shot_sum
-  elsif frames[frame_count][0] != 10 || frame_count == NINE_FRAME # 連続strikeでない
-    next_frame_first_shot_sum + frames[frame_count][1]
-  else #  連続strike
-    next_frame_first_shot_sum + frames[frame_count + 1][0]
-  end
+  next_frame_first_shot_sum + if frame[0] != 10 # spare
+                                0
+                              elsif frames[frame_count][0] != 10 || frame_count == NINE_FRAME # 連続strikeでない
+                                frames[frame_count][1]
+                              else #  連続strike
+                                frames[frame_count + 1][0]
+                              end
 end
 puts point
