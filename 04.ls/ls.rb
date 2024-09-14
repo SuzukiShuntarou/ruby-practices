@@ -1,37 +1,34 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-def filename_max_count(directory)
-  filename_max = 0
-  directory.each { |filename| filename_max = filename.length if filename_max < filename.length }
-  filename_max
+def main
+  filenames = Dir.glob('*')
+  show_file_list(filenames, 3)
 end
 
-def alignment_two_dimensional_array(directory, column_number)
-  # 転置後の行列の列の数が指定の値になるように行の数を求める。
-  row_number = directory.size.ceildiv(column_number)
+def show_file_list(filenames, column_number)
+  maximum_length = filenames.max_by(&:length).length
 
-  adjust_row_number_two_dimensional_array = []
-  while adjust_row_number_two_dimensional_array << directory.values_at(0...row_number)
-    directory.slice!(0...row_number)
-    break if directory.empty?
-  end
-  adjust_row_number_two_dimensional_array.transpose
-end
-
-def formatting(directory, column_number)
-  maxcount = filename_max_count(directory)
-  two_dimention_array = alignment_two_dimensional_array(directory, column_number)
-
-  two_dimention_array.each do |file_column_array|
-    file_column_array.each do |file|
-      print file.ljust(maxcount + 2) unless file.nil?
+  nested_files = format_nested_filenames(filenames, column_number)
+  nested_files.each do |files|
+    files.each do |file|
+      print file.ljust(maximum_length + 2) unless file.nil?
     end
     puts
   end
 end
 
-# カレントディレクトリの取得
-current_directory = Dir.glob('*')
+def format_nested_filenames(filenames, column_number)
+  # 転置後の行列の列の数が指定の値になるように行の数を求める。
+  row_number = filenames.size.ceildiv(column_number)
 
-formatting(current_directory, 3)
+  filenames_adjusted_row_number = []
+  first_column_number = 0
+  column_number.times do
+    filenames_adjusted_row_number << filenames.values_at(first_column_number...first_column_number + row_number)
+    first_column_number += row_number
+  end
+  filenames_adjusted_row_number.transpose
+end
+
+main
