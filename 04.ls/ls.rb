@@ -1,34 +1,41 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+COLUMN_COUNT = 3
+
 def main
-  filenames = Dir.glob('*')
-  show_file_list(filenames, 3)
+  filenames_in_dir = Dir.glob('*')
+  show_file_list(filenames_in_dir, COLUMN_COUNT)
 end
 
-def show_file_list(filenames, column_number)
-  maximum_length = filenames.max_by(&:length).length
+def show_file_list(filenames_in_dir, column_count)
+  maximum_length = filenames_in_dir.max_by(&:length).length
 
-  nested_files = format_nested_filenames(filenames, column_number)
-  nested_files.each do |files|
-    files.each do |file|
-      print file.ljust(maximum_length + 2) unless file.nil?
+  nested_filenames = format_nested_filenames(filenames_in_dir, column_count)
+  nested_filenames.each do |filenames|
+    filenames.each do |filename|
+      print filename.ljust(maximum_length + 2) unless filename.nil?
     end
     puts
   end
 end
 
-def format_nested_filenames(filenames, column_number)
+def format_nested_filenames(filenames_in_dir, column_count)
   # 転置後の行列の列の数が指定の値になるように行の数を求める。
-  row_number = filenames.size.ceildiv(column_number)
+  row_count = filenames_in_dir.length.ceildiv(column_count)
 
-  filenames_adjusted_row_number = []
+  nested_filenames_adjusted_by_row_count = []
   first_column_number = 0
-  column_number.times do
-    filenames_adjusted_row_number << filenames.values_at(first_column_number...first_column_number + row_number)
-    first_column_number += row_number
+  column_count.times do
+    nested_filenames_adjusted_by_row_count << filenames_in_dir[first_column_number, row_count]
+    first_column_number += row_count
   end
-  filenames_adjusted_row_number.transpose
+  # 転置行列を作成するため、二次元配列の最後の要素に不足分があればnilで埋め尽くす。
+  (row_count - nested_filenames_adjusted_by_row_count.last.length).times do
+    nested_filenames_adjusted_by_row_count.last.push(nil)
+  end
+
+  nested_filenames_adjusted_by_row_count.transpose
 end
 
 main
