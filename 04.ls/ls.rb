@@ -25,15 +25,10 @@ def transpose_nested_filenames(filenames)
   row_count = filenames.length.ceildiv(COLUMN_COUNT)
 
   nested_file_names = []
-  first_column_number = 0
-  COLUMN_COUNT.times do
-    nested_file_names << filenames[first_column_number, row_count]
-    first_column_number += row_count
-  end
+  filenames.each_slice(row_count) { |filename| nested_file_names << filename }
   # 転置行列を作成するため、二次元配列の最後の要素に不足分があればnilで埋め尽くす。
-  (row_count - nested_file_names.last.length).times do
-    nested_file_names.last.push(nil)
-  end
+  nil_count = row_count - nested_file_names.last.length
+  nested_file_names.last.concat(Array.new(nil_count))
 
   nested_file_names.transpose
 end
