@@ -4,38 +4,38 @@
 COLUMN_COUNT = 3
 
 def main
-  filenames_in_dir = Dir.glob('*')
-  show_file_list(filenames_in_dir, COLUMN_COUNT)
+  filenames = Dir.glob('*')
+  show_file_list(filenames)
 end
 
-def show_file_list(filenames_in_dir, column_count)
-  maximum_length = filenames_in_dir.max_by(&:length).length
+def show_file_list(filenames)
+  maximum_length = filenames.max_by(&:length).length
 
-  nested_filenames = format_nested_filenames(filenames_in_dir, column_count)
-  nested_filenames.each do |filenames|
-    filenames.each do |filename|
-      print filename.ljust(maximum_length + 2) unless filename.nil?
+  nested_file_names = transpose_nested_filenames(filenames)
+  nested_file_names.each do |file_names|
+    file_names.each do |file_name|
+      print file_name.ljust(maximum_length + 2) unless file_name.nil?
     end
     puts
   end
 end
 
-def format_nested_filenames(filenames_in_dir, column_count)
+def transpose_nested_filenames(filenames)
   # 転置後の行列の列の数が指定の値になるように行の数を求める。
-  row_count = filenames_in_dir.length.ceildiv(column_count)
+  row_count = filenames.length.ceildiv(COLUMN_COUNT)
 
-  nested_filenames_adjusted_by_row_count = []
+  nested_file_names = []
   first_column_number = 0
-  column_count.times do
-    nested_filenames_adjusted_by_row_count << filenames_in_dir[first_column_number, row_count]
+  COLUMN_COUNT.times do
+    nested_file_names << filenames[first_column_number, row_count]
     first_column_number += row_count
   end
   # 転置行列を作成するため、二次元配列の最後の要素に不足分があればnilで埋め尽くす。
-  (row_count - nested_filenames_adjusted_by_row_count.last.length).times do
-    nested_filenames_adjusted_by_row_count.last.push(nil)
+  (row_count - nested_file_names.last.length).times do
+    nested_file_names.last.push(nil)
   end
 
-  nested_filenames_adjusted_by_row_count.transpose
+  nested_file_names.transpose
 end
 
 main
