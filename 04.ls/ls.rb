@@ -1,10 +1,16 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require 'optparse'
 COLUMN_COUNT = 3
 
 def main
-  filenames = all_option?(ARGV) ? Dir.glob('*', File::FNM_DOTMATCH) : Dir.glob('*')
+  option = OptionParser.new
+  options = {}
+  option.on('-a') { options[:all] = true }
+
+  option.parse!(ARGV)
+  filenames = options[:all] ? Dir.glob('*', File::FNM_DOTMATCH) : Dir.glob('*')
   show_file_list(filenames)
 end
 
@@ -29,10 +35,6 @@ def convert_nested_filenames(filenames)
   nested_file_names.last.concat(Array.new(nil_count))
 
   nested_file_names.transpose
-end
-
-def all_option?(option)
-  option.include?('-a') || option.include?('--all')
 end
 
 main
