@@ -1,10 +1,16 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require 'optparse'
 COLUMN_COUNT = 3
 
 def main
-  filenames = Dir.glob('*')
+  option = OptionParser.new
+  options = {}
+  option.on('-a') { options[:all] = true }
+
+  option.parse!(ARGV)
+  filenames = options[:all] ? Dir.glob('*', File::FNM_DOTMATCH) : Dir.glob('*')
   show_file_list(filenames)
 end
 
