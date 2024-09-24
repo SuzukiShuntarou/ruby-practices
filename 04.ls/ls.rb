@@ -12,8 +12,7 @@ def main
 
   option.parse!(ARGV)
   filenames = options[:all] ? Dir.glob('*', File::FNM_DOTMATCH) : Dir.glob('*')
-  filenames.reverse! if options[:reverse]
-  show_file_list(filenames)
+  options[:reverse] ? show_file_list(filenames.reverse) : show_file_list(filenames)
 end
 
 def show_file_list(filenames)
