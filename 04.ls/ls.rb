@@ -8,10 +8,12 @@ def main
   option = OptionParser.new
   options = {}
   option.on('-a') { options[:all] = true }
+  option.on('-r') { options[:reverse] = true }
 
   option.parse!(ARGV)
   filenames = options[:all] ? Dir.glob('*', File::FNM_DOTMATCH) : Dir.glob('*')
-  show_file_list(filenames)
+  filenames_reverse = filenames.reverse if options[:reverse]
+  show_file_list(filenames_reverse || filenames)
 end
 
 def show_file_list(filenames)
