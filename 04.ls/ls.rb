@@ -46,50 +46,74 @@ def convert_nested_filenames(filenames)
   nested_file_names.transpose
 end
 
-def show_long_format(filenames)
-  puts "total #{filenames.map { |filename| (File.symlink?(filename) ? File.lstat(filename) : File.stat(filename)).blocks / 2 }.sum}"
-  files_long_format = convert_long_format(filenames)
+CHARACTER_SPECIAL_FILETYPE = '02'
+BLOCK_SPECIAL_FILETYPE = '06'
 
-  max_show_length = {
-    'nlink' => files_long_format.map { |file_long_format| file_long_format[1]['nlink'].length }.max,
-    'user_name' => files_long_format.map { |file_long_format| file_long_format[1]['user_name'].length }.max,
-    'group_name' => files_long_format.map { |file_long_format| file_long_format[1]['group_name'].length }.max,
-    'file_size' => files_long_format.map { |file_long_format| file_long_format[1]['file_size'].length }.max
+def show_long_format(filenames)
+  file_details = get_file_detail(filenames)
+  total_file_blocksize = file_details.map { |file_detail| file_detail[:file_block_size] }.sum / 2
+
+  max_lengths = {
+    nlink: find_max_length(:nlink, file_details),
+    user_name: find_max_length(:user_name, file_details),
+    group_name: find_max_length(:group_name, file_details),
+    file_size: find_max_length(:file_size, file_details)
   }
 
-  files_long_format.each do |file_long_format|
-    print file_long_format[1]['permison']
-    print file_long_format[1]['nlink'].to_s.ljust(max_show_length['nlink'], "\s")
-    print file_long_format[1]['user_name'].to_s.ljust(max_show_length['user_name'], "\s")
-    print file_long_format[1]['group_name'].to_s.ljust(max_show_length['group_name'], "\s")
-    print file_long_format[1]['file_size'].to_s.rjust(max_show_length['file_size'], "\s")
-    print file_long_format[1]['last_update_datetime']
-    puts file_long_format[1]['file_name']
+  puts "total #{total_file_blocksize}"
+  file_details.each do |file_detail|
+    print "#{file_detail[:permison]}\s"
+    print "#{file_detail[:nlink].to_s.ljust(max_lengths[:nlink], "\s")}\s"
+    print "#{file_detail[:user_name].ljust(max_lengths[:user_name], "\s")}\s"
+    print "#{file_detail[:group_name].ljust(max_lengths[:group_name], "\s")}\s"
+
+    if [CHARACTER_SPECIAL_FILETYPE, BLOCK_SPECIAL_FILETYPE].include?(file_detail[:filetype])
+      print "#{file_detail[:file_major_device]},\s#{file_detail[:file_minor_device]}\s"
+    else
+      print "#{file_detail[:file_size].to_s.rjust(max_lengths[:file_size], "\s")}\s"
+    end
+
+    print "#{file_detail[:last_update_datetime].strftime("%b\s%d\s%H:%M")}\s"
+
+    if file_detail[:file_link_name]
+      puts "#{file_detail[:filename]}\s->\s#{file_detail[:file_link_name]}"
+    else
+      puts file_detail[:filename]
+    end
   end
 end
 
-def convert_long_format(filenames)
-  files_details = {}
-  filenames.each.with_index do |filename, key_id|
+def get_file_detail(filenames)
+  file_details = []
+
+  filenames.each do |filename|
     file_status = File.symlink?(filename) ? File.lstat(filename) : File.stat(filename)
+    file_link_name = File.readlink(filename) if File.symlink?(filename)
 
     filetype = file_status.mode.to_s(8)[0...-4].rjust(2, '0')
     special_authority = file_status.mode.to_s(8)[-4]
     authority = file_status.mode.to_s(8)[-3..]
 
-    file_size = %w[02 06].include?(filetype) ? "#{file_status.rdev_major}, #{file_status.rdev_minor}\s" : "#{file_status.size}\s"
-
-    files_details[key_id.to_s] = {
-      'permison' => "#{convert_displayed_permission(filetype, special_authority, authority)}\s",
-      'nlink' => "#{file_status.nlink}\s",
-      'user_name' => "#{Etc.getpwuid(file_status.uid).name}\s",
-      'group_name' => "#{Etc.getpwuid(file_status.gid).name}\s",
-      'file_size' => file_size,
-      'last_update_datetime' => "#{file_status.mtime.strftime('%b %d %H:%M')}\s",
-      'file_name' => File.symlink?(filename) ? "#{filename} -> #{File.readlink(filename)}" : filename
+    file_details << {
+      permison: convert_displayed_permission(filetype, special_authority, authority),
+      nlink: file_status.nlink,
+      user_name: Etc.getpwuid(file_status.uid).name,
+      group_name: Etc.getpwuid(file_status.gid).name,
+      file_size: file_status.size,
+      file_block_size: file_status.blocks,
+      file_major_device: file_status.rdev_major,
+      file_minor_device: file_status.rdev_minor,
+      last_update_datetime: file_status.mtime,
+      filetype:,
+      file_link_name:,
+      filename:
     }
   end
-  files_details
+  file_details
+end
+
+def find_max_length(key, file_details)
+  file_details.map { |file_detail| file_detail[key].to_s.length }.max
 end
 
 FILE_TYPES = {
@@ -119,17 +143,21 @@ AUTHORITIES = {
   '7' => 'rwx'
 }.freeze
 
+EXECUTABLE = '1'
+WRITABLE = '2'
+READABLE = '4'
+
 def convert_displayed_permission(filetype, special_authority, authority)
-  displayed_filetype = filetype.gsub(/../) { |matched_type| FILE_TYPES[matched_type] }
-  displayed_special_authority = special_authority.gsub(/./) { |matched_special_authority| SPECIAL_AUTHORITIES[matched_special_authority] }
-  displayed_authority = authority.gsub(/[0-7]/) { |matched_authority| AUTHORITIES[matched_authority] }
+  displayed_filetype = filetype.gsub(/../, FILE_TYPES)
+  displayed_special_authority = special_authority.gsub(/./, SPECIAL_AUTHORITIES)
+  displayed_authority = authority.gsub(/[0-7]/, AUTHORITIES)
 
   case special_authority
-  when '1'
+  when EXECUTABLE
     displayed_authority[-1] = authority[-1].to_i.odd? ? displayed_special_authority : displayed_special_authority.upcase
-  when '2'
+  when WRITABLE
     displayed_authority[-4] = authority[1].to_i.odd? ? displayed_special_authority : displayed_special_authority.upcase
-  when '4'
+  when READABLE
     displayed_authority[2] = authority[0].to_i.odd? ? displayed_special_authority : displayed_special_authority.upcase
   end
   displayed_filetype + displayed_authority
