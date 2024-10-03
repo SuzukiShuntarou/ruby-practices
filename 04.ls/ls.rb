@@ -53,12 +53,10 @@ def show_long_format(filenames)
   file_details = get_file_detail(filenames)
   total_file_blocksize = file_details.map { |file_detail| file_detail[:file_block_size] }.sum / 2
 
-  max_lengths = {
-    nlink: find_max_length(:nlink, file_details),
-    user_name: find_max_length(:user_name, file_details),
-    group_name: find_max_length(:group_name, file_details),
-    file_size: find_max_length(:file_size, file_details)
-  }
+  max_lengths = {}
+  %i[nlink user_name group_name file_size].each do |key|
+    max_lengths[key] = find_max_length(key, file_details)
+  end
 
   puts "total #{total_file_blocksize}"
   file_details.each do |file_detail|
@@ -68,18 +66,13 @@ def show_long_format(filenames)
     print "#{file_detail[:group_name].ljust(max_lengths[:group_name], "\s")}\s"
 
     if [CHARACTER_SPECIAL_FILETYPE, BLOCK_SPECIAL_FILETYPE].include?(file_detail[:filetype])
-      print "#{file_detail[:file_major_device]},\s#{file_detail[:file_minor_device]}\s"
+      print "#{file_detail[:file_device][:major]},\s#{file_detail[:file_device][:minor]}\s"
     else
       print "#{file_detail[:file_size].to_s.rjust(max_lengths[:file_size], "\s")}\s"
     end
 
     print "#{file_detail[:last_update_datetime].strftime("%b\s%d\s%H:%M")}\s"
-
-    if file_detail[:file_link_name]
-      puts "#{file_detail[:filename]}\s->\s#{file_detail[:file_link_name]}"
-    else
-      puts file_detail[:filename]
-    end
+    puts file_detail[:file_link_name] ? "#{file_detail[:filename]}\s->\s#{file_detail[:file_link_name]}" : file_detail[:filename]
   end
 end
 
@@ -101,12 +94,9 @@ def get_file_detail(filenames)
       group_name: Etc.getpwuid(file_status.gid).name,
       file_size: file_status.size,
       file_block_size: file_status.blocks,
-      file_major_device: file_status.rdev_major,
-      file_minor_device: file_status.rdev_minor,
+      file_device: { major: file_status.rdev_major, minor: file_status.rdev_minor },
       last_update_datetime: file_status.mtime,
-      filetype:,
-      file_link_name:,
-      filename:
+      filetype:, file_link_name:, filename:
     }
   end
   file_details
