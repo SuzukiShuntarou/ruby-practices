@@ -50,45 +50,39 @@ CHARACTER_SPECIAL_FILETYPE = '02'
 BLOCK_SPECIAL_FILETYPE = '06'
 
 def show_long_format(filenames)
-  file_details = get_file_detail(filenames)
-  total_file_blocksize = file_details.map { |file_detail| file_detail[:file_block_size] }.sum / 2
+  file_details = fetch_file_details(filenames)
+  total = file_details.map { |file_detail| file_detail[:file_block_size] }.sum / 2
+  puts "total #{total}"
 
-  max_lengths = {}
-  %i[nlink user_name group_name file_size].each do |key|
-    max_lengths[key] = find_max_length(key, file_details)
+  max_lengths = %i[nlink user_name group_name file_size].to_h do |key|
+    [key, find_max_length(key, file_details)]
   end
 
-  puts "total #{total_file_blocksize}"
   file_details.each do |file_detail|
-    print "#{file_detail[:permison]}\s"
-    print "#{file_detail[:nlink].to_s.ljust(max_lengths[:nlink], "\s")}\s"
-    print "#{file_detail[:user_name].ljust(max_lengths[:user_name], "\s")}\s"
-    print "#{file_detail[:group_name].ljust(max_lengths[:group_name], "\s")}\s"
+    print "#{file_detail[:permison]} "
+    print "#{file_detail[:nlink].to_s.ljust(max_lengths[:nlink], ' ')} "
+    print "#{file_detail[:user_name].ljust(max_lengths[:user_name], ' ')} "
+    print "#{file_detail[:group_name].ljust(max_lengths[:group_name], ' ')} "
 
     if [CHARACTER_SPECIAL_FILETYPE, BLOCK_SPECIAL_FILETYPE].include?(file_detail[:filetype])
-      print "#{file_detail[:file_device][:major]},\s#{file_detail[:file_device][:minor]}\s"
+      print "#{file_detail[:file_device][:major]}, #{file_detail[:file_device][:minor]} "
     else
-      print "#{file_detail[:file_size].to_s.rjust(max_lengths[:file_size], "\s")}\s"
+      print "#{file_detail[:file_size].to_s.rjust(max_lengths[:file_size], ' ')} "
     end
 
-    print "#{file_detail[:last_update_datetime].strftime("%b\s%d\s%H:%M")}\s"
-    puts file_detail[:file_link_name] ? "#{file_detail[:filename]}\s->\s#{file_detail[:file_link_name]}" : file_detail[:filename]
+    print "#{file_detail[:last_update_datetime].strftime('%b %d %H:%M')} "
+    puts file_detail[:file_link_name] ? "#{file_detail[:filename]} -> #{file_detail[:file_link_name]}" : file_detail[:filename]
   end
 end
 
-def get_file_detail(filenames)
-  file_details = []
-
-  filenames.each do |filename|
+def fetch_file_details(filenames)
+  filenames.map do |filename|
     file_status = File.symlink?(filename) ? File.lstat(filename) : File.stat(filename)
     file_link_name = File.readlink(filename) if File.symlink?(filename)
-
     filetype = file_status.mode.to_s(8)[0...-4].rjust(2, '0')
-    special_authority = file_status.mode.to_s(8)[-4]
-    authority = file_status.mode.to_s(8)[-3..]
 
-    file_details << {
-      permison: convert_displayed_permission(filetype, special_authority, authority),
+    {
+      permison: convert_permission(filetype, file_status),
       nlink: file_status.nlink,
       user_name: Etc.getpwuid(file_status.uid).name,
       group_name: Etc.getpwuid(file_status.gid).name,
@@ -96,10 +90,11 @@ def get_file_detail(filenames)
       file_block_size: file_status.blocks,
       file_device: { major: file_status.rdev_major, minor: file_status.rdev_minor },
       last_update_datetime: file_status.mtime,
-      filetype:, file_link_name:, filename:
+      filetype:,
+      file_link_name:,
+      filename:
     }
   end
-  file_details
 end
 
 def find_max_length(key, file_details)
@@ -137,20 +132,23 @@ EXECUTABLE = '1'
 WRITABLE = '2'
 READABLE = '4'
 
-def convert_displayed_permission(filetype, special_authority, authority)
-  displayed_filetype = filetype.gsub(/../, FILE_TYPES)
-  displayed_special_authority = special_authority.gsub(/./, SPECIAL_AUTHORITIES)
-  displayed_authority = authority.gsub(/[0-7]/, AUTHORITIES)
+def convert_permission(filetype, file_status)
+  special_authority = file_status.mode.to_s(8)[-4]
+  authority = file_status.mode.to_s(8)[-3..]
+
+  filetype_value = filetype.gsub(/../, FILE_TYPES)
+  special_authority_value = special_authority.gsub(/./, SPECIAL_AUTHORITIES)
+  authority_value = authority.gsub(/[0-7]/, AUTHORITIES)
 
   case special_authority
   when EXECUTABLE
-    displayed_authority[-1] = authority[-1].to_i.odd? ? displayed_special_authority : displayed_special_authority.upcase
+    authority_value[-1] = authority[-1].to_i.odd? ? special_authority_value : special_authority_value.upcase
   when WRITABLE
-    displayed_authority[-4] = authority[1].to_i.odd? ? displayed_special_authority : displayed_special_authority.upcase
+    authority_value[-4] = authority[1].to_i.odd? ? special_authority_value : special_authority_value.upcase
   when READABLE
-    displayed_authority[2] = authority[0].to_i.odd? ? displayed_special_authority : displayed_special_authority.upcase
+    authority_value[2] = authority[0].to_i.odd? ? special_authority_value : special_authority_value.upcase
   end
-  displayed_filetype + displayed_authority
+  filetype_value + authority_value
 end
 
 main
