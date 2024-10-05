@@ -17,7 +17,7 @@ def main
   sorted_filenames = filenames.reverse if options[:reverse]
 
   if options[:long]
-    show_long_format(filenames)
+    show_long_format(sorted_filenames || filenames)
   else
     show_file_list(sorted_filenames || filenames)
   end
@@ -54,24 +54,25 @@ def show_long_format(filenames)
   total = file_details.map { |file_detail| file_detail[:file_block_size] }.sum / 2
   puts "total #{total}"
 
-  max_lengths = %i[nlink user_name group_name file_size].to_h do |key|
-    [key, find_max_length(key, file_details)]
-  end
+  max_lengths = %i[nlink user_name group_name file_size].to_h { |key| [key, find_max_length(key, file_details)] }
 
   file_details.each do |file_detail|
-    print "#{file_detail[:permison]} "
-    print "#{file_detail[:nlink].to_s.ljust(max_lengths[:nlink], ' ')} "
-    print "#{file_detail[:user_name].ljust(max_lengths[:user_name], ' ')} "
-    print "#{file_detail[:group_name].ljust(max_lengths[:group_name], ' ')} "
+    long_format_file_detail = [
+      file_detail[:permison],
+      file_detail[:nlink].to_s.ljust(max_lengths[:nlink], ' '),
+      file_detail[:user_name].ljust(max_lengths[:user_name], ' '),
+      file_detail[:group_name].ljust(max_lengths[:group_name], ' '),
 
-    if [CHARACTER_SPECIAL_FILETYPE, BLOCK_SPECIAL_FILETYPE].include?(file_detail[:filetype])
-      print "#{file_detail[:file_device][:major]}, #{file_detail[:file_device][:minor]} "
-    else
-      print "#{file_detail[:file_size].to_s.rjust(max_lengths[:file_size], ' ')} "
-    end
+      if [CHARACTER_SPECIAL_FILETYPE, BLOCK_SPECIAL_FILETYPE].include?(file_detail[:filetype])
+        "#{file_detail[:file_device][:major]}, #{file_detail[:file_device][:minor]}"
+      else
+        file_detail[:file_size].to_s.rjust(max_lengths[:file_size], ' ')
+      end,
 
-    print "#{file_detail[:last_update_datetime].strftime('%b %d %H:%M')} "
-    puts file_detail[:file_link_name] ? "#{file_detail[:filename]} -> #{file_detail[:file_link_name]}" : file_detail[:filename]
+      file_detail[:last_update_datetime].strftime('%b %d %H:%M'),
+      file_detail[:file_link_name] ? "#{file_detail[:filename]} -> #{file_detail[:file_link_name]}" : file_detail[:filename]
+    ]
+    puts long_format_file_detail.join(' ')
   end
 end
 
