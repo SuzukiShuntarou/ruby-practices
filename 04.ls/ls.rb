@@ -26,7 +26,7 @@ end
 def show_file_list(filenames)
   max_length = filenames.max_by(&:length).length
 
-  nested_file_names = convert_nested_filenames(filenames)
+  nested_file_names = convert_to_nested_filenames(filenames)
   nested_file_names.each do |file_names|
     file_names.each do |file_name|
       print file_name.ljust(max_length + 2) unless file_name.nil?
@@ -35,7 +35,7 @@ def show_file_list(filenames)
   end
 end
 
-def convert_nested_filenames(filenames)
+def convert_to_nested_filenames(filenames)
   row_count = filenames.length.ceildiv(COLUMN_COUNT)
 
   nested_file_names = filenames.each_slice(row_count).to_a
@@ -47,7 +47,7 @@ def convert_nested_filenames(filenames)
 end
 
 def show_long_format(filenames)
-  file_details = extract_file_details(filenames)
+  file_details = build_file_details(filenames)
   total = file_details.map { |file_detail| file_detail[:file_block_size] }.sum / 2
   puts "total #{total}"
 
@@ -59,9 +59,7 @@ def show_long_format(filenames)
       file_detail[:nlink].to_s.ljust(max_lengths[:nlink], ' '),
       file_detail[:user_name].ljust(max_lengths[:user_name], ' '),
       file_detail[:group_name].ljust(max_lengths[:group_name], ' '),
-
       format_file_size(file_detail, max_lengths),
-
       file_detail[:last_update_datetime].strftime('%b %d %H:%M'),
       file_detail[:file_link_name] ? "#{file_detail[:filename]} -> #{file_detail[:file_link_name]}" : file_detail[:filename]
     ]
@@ -69,7 +67,7 @@ def show_long_format(filenames)
   end
 end
 
-def extract_file_details(filenames)
+def build_file_details(filenames)
   filenames.map do |filename|
     file_status = File.symlink?(filename) ? File.lstat(filename) : File.stat(filename)
     file_link_name = File.readlink(filename) if File.symlink?(filename)
@@ -93,10 +91,10 @@ end
 
 def find_max_length(file_details)
   %i[nlink user_name group_name file_size].to_h do |key|
-    file_detail_display_length = file_details.map do |file_detail|
+    values = file_details.map do |file_detail|
       file_detail[key].to_s.length
     end
-    [key, file_detail_display_length.max]
+    [key, values.max]
   end
 end
 
