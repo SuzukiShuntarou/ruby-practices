@@ -14,19 +14,19 @@ def main
 
   option.parse!(ARGV)
   filenames = options[:all] ? Dir.glob('*', File::FNM_DOTMATCH) : Dir.glob('*')
-  sorted_filenames = filenames.reverse if options[:reverse]
+  sorted_filenames = options[:reverse] ? filenames.reverse : filenames
 
   if options[:long]
-    show_long_format(filenames)
+    show_long_format(sorted_filenames)
   else
-    show_file_list(sorted_filenames || filenames)
+    show_file_list(sorted_filenames)
   end
 end
 
 def show_file_list(filenames)
   max_length = filenames.max_by(&:length).length
 
-  nested_file_names = convert_nested_filenames(filenames)
+  nested_file_names = convert_to_nested_filenames(filenames)
   nested_file_names.each do |file_names|
     file_names.each do |file_name|
       print file_name.ljust(max_length + 2) unless file_name.nil?
@@ -35,7 +35,7 @@ def show_file_list(filenames)
   end
 end
 
-def convert_nested_filenames(filenames)
+def convert_to_nested_filenames(filenames)
   row_count = filenames.length.ceildiv(COLUMN_COUNT)
 
   nested_file_names = filenames.each_slice(row_count).to_a
@@ -46,43 +46,35 @@ def convert_nested_filenames(filenames)
   nested_file_names.transpose
 end
 
-CHARACTER_SPECIAL_FILETYPE = '02'
-BLOCK_SPECIAL_FILETYPE = '06'
-
 def show_long_format(filenames)
-  file_details = fetch_file_details(filenames)
+  file_details = build_file_details(filenames)
   total = file_details.map { |file_detail| file_detail[:file_block_size] }.sum / 2
   puts "total #{total}"
 
-  max_lengths = %i[nlink user_name group_name file_size].to_h do |key|
-    [key, find_max_length(key, file_details)]
-  end
+  max_lengths = find_max_length(file_details)
 
   file_details.each do |file_detail|
-    print "#{file_detail[:permison]} "
-    print "#{file_detail[:nlink].to_s.ljust(max_lengths[:nlink], ' ')} "
-    print "#{file_detail[:user_name].ljust(max_lengths[:user_name], ' ')} "
-    print "#{file_detail[:group_name].ljust(max_lengths[:group_name], ' ')} "
-
-    if [CHARACTER_SPECIAL_FILETYPE, BLOCK_SPECIAL_FILETYPE].include?(file_detail[:filetype])
-      print "#{file_detail[:file_device][:major]}, #{file_detail[:file_device][:minor]} "
-    else
-      print "#{file_detail[:file_size].to_s.rjust(max_lengths[:file_size], ' ')} "
-    end
-
-    print "#{file_detail[:last_update_datetime].strftime('%b %d %H:%M')} "
-    puts file_detail[:file_link_name] ? "#{file_detail[:filename]} -> #{file_detail[:file_link_name]}" : file_detail[:filename]
+    columns = [
+      file_detail[:permission],
+      file_detail[:nlink].to_s.ljust(max_lengths[:nlink], ' '),
+      file_detail[:user_name].ljust(max_lengths[:user_name], ' '),
+      file_detail[:group_name].ljust(max_lengths[:group_name], ' '),
+      format_file_size(file_detail, max_lengths),
+      file_detail[:last_update_datetime].strftime('%b %d %H:%M'),
+      file_detail[:file_link_name] ? "#{file_detail[:filename]} -> #{file_detail[:file_link_name]}" : file_detail[:filename]
+    ]
+    puts columns.join(' ')
   end
 end
 
-def fetch_file_details(filenames)
+def build_file_details(filenames)
   filenames.map do |filename|
     file_status = File.symlink?(filename) ? File.lstat(filename) : File.stat(filename)
     file_link_name = File.readlink(filename) if File.symlink?(filename)
     filetype = file_status.mode.to_s(8)[0...-4].rjust(2, '0')
 
     {
-      permison: convert_permission(filetype, file_status),
+      permission: convert_permission(filetype, file_status),
       nlink: file_status.nlink,
       user_name: Etc.getpwuid(file_status.uid).name,
       group_name: Etc.getpwuid(file_status.gid).name,
@@ -97,8 +89,24 @@ def fetch_file_details(filenames)
   end
 end
 
-def find_max_length(key, file_details)
-  file_details.map { |file_detail| file_detail[key].to_s.length }.max
+def find_max_length(file_details)
+  %i[nlink user_name group_name file_size].to_h do |key|
+    values = file_details.map do |file_detail|
+      file_detail[key].to_s.length
+    end
+    [key, values.max]
+  end
+end
+
+CHARACTER_SPECIAL_FILETYPE = '02'
+BLOCK_SPECIAL_FILETYPE = '06'
+
+def format_file_size(file_detail, max_lengths)
+  if [CHARACTER_SPECIAL_FILETYPE, BLOCK_SPECIAL_FILETYPE].include?(file_detail[:filetype])
+    "#{file_detail[:file_device][:major]}, #{file_detail[:file_device][:minor]}"
+  else
+    file_detail[:file_size].to_s.rjust(max_lengths[:file_size], ' ')
+  end
 end
 
 FILE_TYPES = {
