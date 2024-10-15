@@ -4,43 +4,69 @@
 require 'optparse'
 
 def main
+  argv = ARGV
+  stdin = $stdin
+  options = parse_options(argv)
+  if File.pipe?(stdin)
+    unnamed_files = []
+    unnamed_files << { unnamed_file: stdin.readlines }
+    inputs = convert_to_wcformat(unnamed_files)
+    show_inputs(inputs, options)
+  else
+    files = convert_to_wcformat(read_files(argv))
+    show_files(files, options)
+  end
+end
+
+def parse_options(argv)
   option = OptionParser.new
   options = {}
   option.on('-l') { options[:line] = true }
   option.on('-w') { options[:word] = true }
   option.on('-c') { options[:character] = true }
 
-  option.parse!(ARGV)
+  option.parse!(argv)
   %i[line word character].each { |key| options[key] = true } if options.empty?
-
-  if File.pipe?($stdin)
-    show_inputs_in_wcformat(convert_inputs_to_wcformat, options)
-  else
-    show_files_in_wcformat(convert_files_to_wcformat, options)
-  end
+  options
 end
 
-def show_inputs_in_wcformat(inputs, options)
-  %i[line word character].each do |key|
-    if options.size == 1 && options[key]
-      print inputs[key]
-    elsif options[key]
-      print "#{inputs[key].rjust(7, ' ')} "
+def read_files(files)
+  files.map do |file|
+    File.open(file) do |f|
+      { file => f.readlines }
     end
   end
-  puts
 end
 
-def convert_inputs_to_wcformat
-  inputs = $stdin.readlines
-  {
-    line: inputs.join.count("\n").to_s,
-    word: inputs.map { |input| input.split.size }.sum.to_s,
-    character: inputs.map(&:bytesize).sum.to_s
-  }
+def convert_to_wcformat(files)
+  wcformat_files = []
+  files.each do |file|
+    file.each do |key, value|
+      wcformat_files << {
+        filename: key,
+        line: value.join.count("\n").to_s,
+        word: value.map { |test| test.split.size }.sum.to_s,
+        character: value.map(&:bytesize).sum.to_s
+      }
+    end
+  end
+  wcformat_files
 end
 
-def show_files_in_wcformat(files, options)
+def show_inputs(inputs, options)
+  inputs.each do |input|
+    %i[line word character].each do |key|
+      if options.size == 1 && options[key]
+        print input[key]
+      elsif options[key]
+        print "#{input[key].rjust(7, ' ')} "
+      end
+    end
+    puts
+  end
+end
+
+def show_files(files, options)
   total = {}
   max_length = find_max_length(files)
   files.each do |file|
@@ -55,22 +81,6 @@ def show_files_in_wcformat(files, options)
 
   display = total.values.map { |value| value.rjust(max_length, ' ') }
   puts "#{display.join(' ')} total" if files.size > 1
-end
-
-def convert_files_to_wcformat
-  files = []
-  ARGV.each do |file|
-    File.open(file) do |f|
-      file_contents = f.readlines
-      files << {
-        filename: file,
-        line: file_contents.join.count("\n").to_s,
-        word: file_contents.size.to_s,
-        character: file_contents.map(&:bytesize).sum.to_s
-      }
-    end
-  end
-  files
 end
 
 def convert_to_total(key, files)
