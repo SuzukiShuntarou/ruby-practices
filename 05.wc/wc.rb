@@ -7,14 +7,17 @@ def main
   argv = ARGV
   stdin = $stdin
   options = parse_options(argv)
-  if File.pipe?(stdin)
-    unnamed_files = []
-    unnamed_files << { unnamed_file: stdin.readlines }
-    inputs = convert_to_wcformat(unnamed_files)
-    show_inputs(inputs, options)
-  else
-    files = convert_to_wcformat(read_files(argv))
+  if argv.any?
+    files = convert_to_count_contents(read_files(argv))
     show_files(files, options)
+  elsif !stdin.eof?
+    stdin_files = []
+    stdin_files << {
+      name: nil,
+      content: stdin.readlines
+    }
+    inputs = convert_to_count_contents(stdin_files)
+    show_inputs(inputs, options)
   end
 end
 
@@ -33,24 +36,23 @@ end
 def read_files(files)
   files.map do |file|
     File.open(file) do |f|
-      { file => f.readlines }
+      {
+        name: file,
+        content: f.readlines
+      }
     end
   end
 end
 
-def convert_to_wcformat(files)
-  wcformat_files = []
-  files.each do |file|
-    file.each do |key, value|
-      wcformat_files << {
-        filename: key,
-        line: value.join.count("\n").to_s,
-        word: value.map { |test| test.split.size }.sum.to_s,
-        character: value.map(&:bytesize).sum.to_s
-      }
-    end
+def convert_to_count_contents(files)
+  files.map do |file|
+    {
+      filename: file[:name],
+      line: file[:content].join.count("\n").to_s,
+      word: file[:content].map { |test| test.split.size }.sum.to_s,
+      character: file[:content].map(&:bytesize).sum.to_s
+    }
   end
-  wcformat_files
 end
 
 def show_inputs(inputs, options)
