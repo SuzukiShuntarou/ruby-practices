@@ -4,12 +4,12 @@
 require 'optparse'
 
 def main
-  argv = ARGV
   stdin = $stdin
-  options = parse_options(argv)
-  if argv.any?
-    files = convert_to_count_contents(read_files(argv))
-    show_files(files, options)
+  options, filenames = parse_options(ARGV)
+  if filenames.any?
+    files = convert_to_count_contents(read_files(filenames))
+    length = find_max_length(files)
+    show_count_contents(files, options, length)
   elsif !stdin.eof?
     stdin_files = []
     stdin_files << {
@@ -17,7 +17,8 @@ def main
       content: stdin.readlines
     }
     inputs = convert_to_count_contents(stdin_files)
-    show_inputs(inputs, options)
+    length = 0
+    show_count_contents(inputs, options, length)
   end
 end
 
@@ -28,9 +29,9 @@ def parse_options(argv)
   option.on('-w') { options[:word] = true }
   option.on('-c') { options[:character] = true }
 
-  option.parse!(argv)
+  filenames = option.parse(argv)
   %i[line word character].each { |key| options[key] = true } if options.empty?
-  options
+  [options, filenames]
 end
 
 def read_files(files)
@@ -55,40 +56,6 @@ def convert_to_count_contents(files)
   end
 end
 
-def show_inputs(inputs, options)
-  inputs.each do |input|
-    %i[line word character].each do |key|
-      if options.size == 1 && options[key]
-        print input[key]
-      elsif options[key]
-        print "#{input[key].rjust(7, ' ')} "
-      end
-    end
-    puts
-  end
-end
-
-def show_files(files, options)
-  total = {}
-  max_length = find_max_length(files)
-  files.each do |file|
-    %i[line word character].each do |key|
-      if options[key]
-        print "#{file[key].rjust(max_length, ' ')} "
-        total[key] = convert_to_total(key, files).to_s if files.size > 1
-      end
-    end
-    puts file[:filename]
-  end
-
-  display = total.values.map { |value| value.rjust(max_length, ' ') }
-  puts "#{display.join(' ')} total" if files.size > 1
-end
-
-def convert_to_total(key, files)
-  files.map { |file| file[key].to_i }.sum
-end
-
 def find_max_length(files)
   total = [
     files.map { |file| file[:line].to_i }.sum.to_s,
@@ -96,6 +63,31 @@ def find_max_length(files)
     files.map { |file| file[:character].to_i }.sum.to_s
   ]
   total.map(&:length).max
+end
+
+def show_count_contents(contents, options, max_length)
+  contents.each do |content|
+    %i[line word character].each do |key|
+      next if !options[key]
+
+      if !content[:filename] && options.size != 1
+        print "#{content[key].rjust(7, ' ')} "
+      else
+        print "#{content[key].rjust(max_length, ' ')} "
+      end
+    end
+    puts content[:filename]
+  end
+  show_total(contents, options, max_length) if contents.size > 1
+end
+
+def show_total(files, options, max_length)
+  total = {}
+  %i[line word character].each do |key|
+    total[key] = files.map { |file| file[key].to_i }.sum.to_s if options[key]
+  end
+  display = total.values.map { |value| value.rjust(max_length, ' ') }
+  puts "#{display.join(' ')} total"
 end
 
 main
