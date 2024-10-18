@@ -6,20 +6,19 @@ require 'optparse'
 def main
   stdin = $stdin
   options, filenames = parse_options(ARGV)
-  if filenames.any?
-    files = convert_to_count_contents(read_files(filenames))
-    length = find_max_length(files)
-    show_count_contents(files, options, length)
-  elsif !stdin.eof?
-    stdin_files = []
-    stdin_files << {
-      name: nil,
-      content: stdin.readlines
-    }
-    inputs = convert_to_count_contents(stdin_files)
-    length = 0
-    show_count_contents(inputs, options, length)
-  end
+  files, length =
+    if filenames.any?
+      contents = convert_to_count_contents(read_files(filenames))
+      [contents, find_max_length(contents)]
+    else
+      stdin_files = []
+      stdin_files << {
+        name: nil,
+        content: stdin.readlines
+      }
+      [convert_to_count_contents(stdin_files), 0]
+    end
+  show_count_contents(files, options, length)
 end
 
 def parse_options(argv)
@@ -70,11 +69,8 @@ def show_count_contents(contents, options, max_length)
     %i[line word character].each do |key|
       next if !options[key]
 
-      if !content[:filename] && options.size != 1
-        print "#{content[key].rjust(7, ' ')} "
-      else
-        print "#{content[key].rjust(max_length, ' ')} "
-      end
+      rjust_length = content[:filename] || options.size == 1 ? max_length : 7
+      print "#{content[key].rjust(rjust_length, ' ')} "
     end
     puts content[:filename]
   end
@@ -86,8 +82,8 @@ def show_total(files, options, max_length)
   %i[line word character].each do |key|
     total[key] = files.map { |file| file[key].to_i }.sum.to_s if options[key]
   end
-  display = total.values.map { |value| value.rjust(max_length, ' ') }
-  puts "#{display.join(' ')} total"
+  formatted_total_counts = total.values.map { |value| value.rjust(max_length, ' ') }
+  puts "#{formatted_total_counts.join(' ')} total"
 end
 
 main
