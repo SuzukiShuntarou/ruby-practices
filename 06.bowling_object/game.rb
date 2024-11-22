@@ -5,43 +5,64 @@ require_relative 'shot'
 require_relative 'frame'
 
 class Game
-  def initialize(scores)
-    @scores = scores
+  def initialize(marks)
+    @marks = marks
   end
 
-  def score
-    @frames = []
-    convert_scores_to_frames.map.with_index(1) do |frame, frame_count|
-      calculate_frame_score(frame[:first_shot] + frame[:second_shot] + (frame[:third_shot] || 0), frame_count)
-    end.sum
+  LAST_FRAME = 10
+  NINE_FRAME = 9
+  TWO_SHOTS = 2
+
+  def calculate_score
+    frames = build_frames
+    point = 0
+    frames.each.with_index(1) do |frame, count|
+      now_frame = Frame.new(frame[0], frame[1], frame[2] || 0)
+      next_frame = Frame.new(frames[count][0], frames[count][1], frames[count][2] || 0) if count < LAST_FRAME
+      after_next_frame = Frame.new(frames[count + 1][0], frames[count][1], frames[count][2] || 0) if count < NINE_FRAME
+
+      point += now_frame.calculate_score + calculate_bonus_score(now_frame, next_frame, after_next_frame)
+    end
+    point
   end
 
   private
 
-  NINE_FRAME = 9
-  TWO_SHOTS = 2
-
-  def convert_scores_to_frames
-    shots = []
-    @scores.split(',').each do |score|
-      shots << Shot.new(score).score
-      shots << 0 if score == 'X' && shots.length < NINE_FRAME * TWO_SHOTS
-    end
-
-    keys = %i[first_shot second_shot third_shot]
-    shots.shift(NINE_FRAME * TWO_SHOTS).each_slice(TWO_SHOTS) do |value|
-      @frames << keys.zip(value).to_h
-    end
-    @frames << keys.zip(shots).to_h
+  def build_frames
+    shots = build_shots
+    frames = shots.shift(NINE_FRAME * TWO_SHOTS).each_slice(TWO_SHOTS).to_a
+    frames << shots
   end
 
-  def calculate_frame_score(point, frame_count)
-    now_frame = @frames[frame_count - 1]
-    next_frame = @frames[frame_count]
-    frame_after_next = @frames[frame_count + 1]
-    Frame.new(point, frame_count, now_frame, next_frame, frame_after_next).score
+  def build_shots
+    shots = []
+    @marks.split(',').map do |mark|
+      shot = Shot.new(mark)
+      shots << shot.score
+      shots << 0 if shot.strike? && shots.length < NINE_FRAME * TWO_SHOTS
+    end
+    shots
+  end
+
+  def calculate_bonus_score(now_frame, next_frame, after_next_frame)
+    return 0 if finished?(next_frame) || now_frame.open_frame?
+
+    next_frame.first_shot +
+      if now_frame.strike? && next_frame.strike? && after_next_frame
+        after_next_frame.first_shot
+      elsif now_frame.strike?
+        next_frame.second_shot
+      else
+        0
+      end
+  end
+
+  def finished?(next_frame)
+    !next_frame
   end
 end
 
-game = Game.new(ARGV[0])
-puts game.score
+if $PROGRAM_NAME == __FILE__
+  game = Game.new(ARGV[0])
+  puts game.calculate_score
+end

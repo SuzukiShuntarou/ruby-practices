@@ -1,30 +1,29 @@
 # frozen_string_literal: true
 
 class Frame
-  def initialize(point, frame_count, now_frame, next_frame, frame_after_next)
-    @point = point
-    @frame_count = frame_count
-    @now_frame = now_frame
-    @next_frame = next_frame
-    @frame_after_next = frame_after_next
+  attr_reader :first_shot, :second_shot, :third_shot
+
+  def initialize(first_shot, second_shot, third_shot)
+    @first_shot = first_shot
+    @second_shot = second_shot
+    @third_shot = third_shot
   end
 
-  BEFORE_FINAL_FRAME = 9
-  FINAL_FRAME = 10
+  def calculate_score
+    @first_shot + @second_shot + @third_shot
+  end
 
-  def score
-    @point +=
-      if @point == 10 && @frame_count != FINAL_FRAME
-        @next_frame[:first_shot] +
-          if @now_frame[:first_shot] != 10
-            0
-          elsif @next_frame[:first_shot] != 10 || @frame_count == BEFORE_FINAL_FRAME
-            @next_frame[:second_shot]
-          else
-            @frame_after_next[:first_shot]
-          end
-      else
-        0
-      end
+  BOWLING_PINS = 10
+
+  def strike?
+    @first_shot == BOWLING_PINS
+  end
+
+  def spare?
+    @first_shot != BOWLING_PINS && @first_shot + @second_shot == BOWLING_PINS
+  end
+
+  def open_frame?
+    @first_shot + @second_shot < BOWLING_PINS
   end
 end
