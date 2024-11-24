@@ -1,29 +1,41 @@
 # frozen_string_literal: true
 
 class Frame
-  attr_reader :first_shot, :second_shot, :third_shot
+  FULL_SCORE = 10
+  attr_reader :shots
 
-  def initialize(first_shot, second_shot, third_shot)
-    @first_shot = first_shot
-    @second_shot = second_shot
-    @third_shot = third_shot
+  def initialize(shots)
+    @shots = shots
   end
 
-  def calculate_score
-    @first_shot + @second_shot + @third_shot
+  def calculate_score(next_frame, after_next_frame)
+    sum_shots +
+      if open_frame? || !next_frame
+        0
+      elsif spare?
+        next_frame.shots[0].score
+      elsif next_frame.strike? && after_next_frame
+        next_frame.shots[0].score + after_next_frame.shots[0].score
+      else
+        next_frame.shots[0].score + next_frame.shots[1].score
+      end
   end
-
-  BOWLING_PINS = 10
 
   def strike?
-    @first_shot == BOWLING_PINS
+    @shots[0].strike?
   end
 
   def spare?
-    @first_shot != BOWLING_PINS && @first_shot + @second_shot == BOWLING_PINS
+    score = sum_shots
+    !@shots[0].strike? && score == FULL_SCORE
   end
 
   def open_frame?
-    @first_shot + @second_shot < BOWLING_PINS
+    score = sum_shots
+    score < FULL_SCORE
+  end
+
+  def sum_shots
+    @shots.map(&:score).sum
   end
 end

@@ -9,56 +9,36 @@ class Game
     @marks = marks
   end
 
-  LAST_FRAME = 10
-  NINE_FRAME = 9
-  TWO_SHOTS = 2
-
   def calculate_score
-    frames = build_frames
-    point = 0
-    frames.each.with_index(1) do |frame, count|
-      now_frame = Frame.new(frame[0], frame[1], frame[2] || 0)
-      next_frame = Frame.new(frames[count][0], frames[count][1], frames[count][2] || 0) if count < LAST_FRAME
-      after_next_frame = Frame.new(frames[count + 1][0], frames[count][1], frames[count][2] || 0) if count < NINE_FRAME
+    shots = build_shots
 
-      point += now_frame.calculate_score + calculate_bonus_score(now_frame, next_frame, after_next_frame)
-    end
-    point
+    shots.map.with_index do |shot, count|
+      current_frame = Frame.new(shot)
+      next_frame = Frame.new(shots[count + 1]) if count < 9
+      after_next_frame = Frame.new(shots[count + 2]) if count < 8
+
+      current_frame.calculate_score(next_frame, after_next_frame)
+    end.sum
   end
 
   private
 
-  def build_frames
-    shots = build_shots
-    frames = shots.shift(NINE_FRAME * TWO_SHOTS).each_slice(TWO_SHOTS).to_a
-    frames << shots
-  end
-
   def build_shots
-    shots = []
-    @marks.split(',').map do |mark|
-      shot = Shot.new(mark)
-      shots << shot.score
-      shots << 0 if shot.strike? && shots.length < NINE_FRAME * TWO_SHOTS
-    end
-    shots
-  end
+    shots = @marks.split(',').map { |mark| Shot.new(mark) }
+    split_shots = []
 
-  def calculate_bonus_score(now_frame, next_frame, after_next_frame)
-    return 0 if finished?(next_frame) || now_frame.open_frame?
-
-    next_frame.first_shot +
-      if now_frame.strike? && next_frame.strike? && after_next_frame
-        after_next_frame.first_shot
-      elsif now_frame.strike?
-        next_frame.second_shot
+    shots.each_with_index do |shot, count|
+      if split_shots.last.to_a.include?(shot)
+        next
+      elsif split_shots.length == 9
+        split_shots[9] = shots[count..]
+      elsif shot.strike?
+        split_shots << [shot]
       else
-        0
+        split_shots << [shot, shots[count + 1]]
       end
-  end
-
-  def finished?(next_frame)
-    !next_frame
+    end
+    split_shots
   end
 end
 
