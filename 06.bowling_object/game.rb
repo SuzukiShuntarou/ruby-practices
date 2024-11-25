@@ -10,12 +10,12 @@ class Game
   end
 
   def calculate_score
-    shots = build_shots
+    nested_shots = build_shots
 
-    shots.map.with_index do |shot, count|
-      current_frame = Frame.new(shot)
-      next_frame = Frame.new(shots[count + 1]) if count < 9
-      after_next_frame = Frame.new(shots[count + 2]) if count < 8
+    nested_shots.map.with_index do |shots, count|
+      current_frame = Frame.new(shots)
+      next_frame = Frame.new(nested_shots[count + 1]) if count < 9
+      after_next_frame = Frame.new(nested_shots[count + 2]) if count < 8
 
       current_frame.calculate_score(next_frame, after_next_frame)
     end.sum
@@ -25,20 +25,20 @@ class Game
 
   def build_shots
     shots = @marks.split(',').map { |mark| Shot.new(mark) }
-    split_shots = []
+    nested_shots = []
 
     shots.each_with_index do |shot, count|
-      if split_shots.last.to_a.include?(shot)
+      if nested_shots.last.to_a.include?(shot)
         next
-      elsif split_shots.length == 9
-        split_shots[9] = shots[count..]
+      elsif nested_shots.length == 9
+        nested_shots[9] = shots[count..]
       elsif shot.strike?
-        split_shots << [shot]
+        nested_shots << [shot]
       else
-        split_shots << [shot, shots[count + 1]]
+        nested_shots << [shot, shots[count + 1]]
       end
     end
-    split_shots
+    nested_shots
   end
 end
 
