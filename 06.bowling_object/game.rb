@@ -27,18 +27,17 @@ class Game
     shots = @marks.split(',').map { |mark| Shot.new(mark) }
     nested_shots = []
 
-    shots.each_with_index do |shot, count|
-      if nested_shots.last.to_a.include?(shot)
-        next
-      elsif nested_shots.length == 9
-        nested_shots[9] = shots[count..]
-      elsif shot.strike?
-        nested_shots << [shot]
+    count_by_frame = 0
+    9.times do
+      if shots[count_by_frame].strike?
+        nested_shots << [shots[count_by_frame]]
       else
-        nested_shots << [shot, shots[count + 1]]
+        nested_shots << [shots[count_by_frame], shots[count_by_frame + 1]]
+        count_by_frame += 1
       end
+      count_by_frame += 1
     end
-    nested_shots
+    nested_shots << shots[count_by_frame..]
   end
 end
 
