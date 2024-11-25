@@ -12,13 +12,13 @@ class Game
   def calculate_score
     nested_shots = build_shots
 
-    nested_shots.map.with_index do |shots, count|
+    nested_shots.each_with_index.sum do |shots, count|
       current_frame = Frame.new(shots)
       next_frame = Frame.new(nested_shots[count + 1]) if count < 9
       after_next_frame = Frame.new(nested_shots[count + 2]) if count < 8
 
       current_frame.calculate_score(next_frame, after_next_frame)
-    end.sum
+    end
   end
 
   private

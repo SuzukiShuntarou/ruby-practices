@@ -36,6 +36,6 @@ class Frame
   end
 
   def sum_shots
-    @shots.map(&:score).sum
+    @shots.sum(&:score)
   end
 end
