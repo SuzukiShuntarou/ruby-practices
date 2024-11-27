@@ -14,10 +14,12 @@ class Frame
         0
       elsif spare?
         next_frame.shots[0].score
-      elsif next_frame.strike? && after_next_frame
-        next_frame.shots[0].score + after_next_frame.shots[0].score
-      else
-        next_frame.shots[0].score + next_frame.shots[1].score
+      elsif strike?
+        if next_frame.strike? && after_next_frame
+          next_frame.shots[0].score + after_next_frame.shots[0].score
+        else
+          next_frame.shots[0].score + next_frame.shots[1].score
+        end
       end
   end
 
