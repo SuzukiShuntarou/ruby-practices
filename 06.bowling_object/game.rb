@@ -26,17 +26,13 @@ class Game
     shots = @marks.split(',').map { |mark| Shot.new(mark) }
     frames = []
 
-    count_by_shot = 0
-    9.times do |count_by_frame|
-      if shots[count_by_shot].strike?
-        frames[count_by_frame] = Frame.new([shots[count_by_shot]])
-      else
-        frames[count_by_frame] = Frame.new([shots[count_by_shot], shots[count_by_shot + 1]])
-        count_by_shot += 1
-      end
-      count_by_shot += 1
+    shot_pos = 0
+    9.times do |frame_index|
+      length = shots[shot_pos].strike? ? 1 : 2
+      frames[frame_index] = Frame.new(shots[shot_pos, length])
+      shot_pos += length
     end
-    frames << Frame.new(shots[count_by_shot..])
+    [*frames, Frame.new(shots[shot_pos..])]
   end
 end
 
