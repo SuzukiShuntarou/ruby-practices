@@ -28,7 +28,7 @@ class Frame
   end
 
   def spare?
-    !@shots[0].strike? && sum_shots == FULL_SCORE
+    !strike? && sum_shots == FULL_SCORE
   end
 
   def open_frame?
