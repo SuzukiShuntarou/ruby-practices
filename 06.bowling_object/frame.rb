@@ -9,17 +9,14 @@ class Frame
   end
 
   def calculate_score(next_frame, after_next_frame)
+    following_shots = [next_frame, after_next_frame].compact.flat_map(&:shots)
     sum_shots +
       if open_frame? || !next_frame
         0
       elsif spare?
-        next_frame.shots[0].score
+        following_shots[0].score
       elsif strike?
-        if next_frame.strike? && after_next_frame
-          next_frame.shots[0].score + after_next_frame.shots[0].score
-        else
-          next_frame.shots[0].score + next_frame.shots[1].score
-        end
+        following_shots.first(2).sum(&:score)
       end
   end
 
