@@ -11,11 +11,8 @@ class Game
 
   def calculate_score
     frames = build_frames
-
-    frames.each_with_index.sum do |current_frame, count|
-      next_frame = frames[count + 1] if count < 9
-      after_next_frame = frames[count + 2] if count < 8
-
+    10.times.sum do |count|
+      current_frame, next_frame, after_next_frame = frames[count, 3]
       current_frame.calculate_score(next_frame, after_next_frame)
     end
   end
@@ -25,7 +22,6 @@ class Game
   def build_frames
     shots = @marks.split(',').map { |mark| Shot.new(mark) }
     frames = []
-
     shot_pos = 0
     9.times do |frame_index|
       length = shots[shot_pos].strike? ? 1 : 2
