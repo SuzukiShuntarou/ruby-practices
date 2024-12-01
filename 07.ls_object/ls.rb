@@ -5,7 +5,7 @@ require_relative 'directory'
 require_relative 'directoryformatter'
 require_relative 'file'
 
-class Main
+class Ls
   require 'optparse'
 
   def initialize(argv = nil)
@@ -52,5 +52,5 @@ class Main
   end
 end
 
-main = Main.new(ARGV)
-main.show_file_list
+ls = Ls.new(ARGV)
+ls.show_file_list
