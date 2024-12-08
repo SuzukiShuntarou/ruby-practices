@@ -8,7 +8,7 @@ require 'optparse'
 
 class Ls
   def initialize(argv = nil)
-    @argv = argv
+    parse_options(argv)
   end
 
   def show_file_list
@@ -29,25 +29,24 @@ class Ls
   end
 
   def all?
-    parse_options[:all]
+    @options[:all]
   end
 
   def reverse?
-    parse_options[:reverse]
+    @options[:reverse]
   end
 
   def long?
-    parse_options[:long]
+    @options[:long]
   end
 
-  def parse_options
+  def parse_options(argv)
     option = OptionParser.new
-    options = {}
-    option.on('-a') { options[:all] = true }
-    option.on('-r') { options[:reverse] = true }
-    option.on('-l') { options[:long] = true }
-    option.parse(@argv)
-    options
+    @options = {}
+    option.on('-a') { @options[:all] = true }
+    option.on('-r') { @options[:reverse] = true }
+    option.on('-l') { @options[:long] = true }
+    option.parse!(argv)
   end
 end
 
