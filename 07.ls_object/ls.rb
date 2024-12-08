@@ -4,10 +4,9 @@
 require_relative 'directory'
 require_relative 'directoryformatter'
 require_relative 'file'
+require 'optparse'
 
 class Ls
-  require 'optparse'
-
   def initialize(argv = nil)
     @argv = argv
   end
