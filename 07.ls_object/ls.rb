@@ -19,8 +19,12 @@ class Ls
 
   def build_directory
     filenames = LsOption.all? ? Dir.foreach('.').to_a : Dir.glob('*')
-    sorted_filenames = filenames.sort_by { |filename| filename.sub(/^\./, '').downcase }
-
+    sorted_filenames = filenames.sort_by do |filename|
+      [
+        filename.sub(/^\.+/, '').downcase,
+        filename.match?(/^\.+$/) ? filename.count('.') : -filename.count('.')
+      ]
+    end
     files = sorted_filenames.map do |filename|
       LsFile::File.new(filename)
     end
