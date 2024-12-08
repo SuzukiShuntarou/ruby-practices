@@ -11,7 +11,7 @@ class Directory
     @files.sum(&:block_size) / 2
   end
 
-  def find_attributes_max_length
+  def attributes_max_length
     %i[link_count owner_name group_name size].to_h do |key|
       values = @files.map do |file|
         file.send(key).to_s.length
@@ -20,7 +20,7 @@ class Directory
     end
   end
 
-  def find_filename_max_length
+  def filename_max_length
     @files.map { |file| file.name.length }.max
   end
 end

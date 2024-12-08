@@ -14,7 +14,7 @@ class DirectoryFormatter < Directory
   private
 
   def build_long_format_files
-    lengths = find_attributes_max_length
+    lengths = attributes_max_length
     @files.map do |file|
       [
         file.permission,
@@ -30,7 +30,7 @@ class DirectoryFormatter < Directory
 
   def build_short_format_files
     nested_files = build_nested_files
-    length = find_filename_max_length
+    length = filename_max_length
 
     nested_files.map do |files|
       files.map { |file| file&.name&.ljust(length + 2) }.join('')
