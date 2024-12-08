@@ -4,7 +4,7 @@
 require_relative 'lsoption/option'
 require_relative 'directory'
 require_relative 'directoryformatter'
-require_relative 'file'
+require_relative 'lsfile/file'
 
 class Ls
   def initialize(argv = nil)
@@ -22,7 +22,7 @@ class Ls
     sorted_filenames = filenames.sort_by { |filename| filename.sub(/^\./, '').downcase }
 
     files = sorted_filenames.map do |filename|
-      CustomFile::File.new(filename)
+      LsFile::File.new(filename)
     end
     DirectoryFormatter.new(LsOption.reverse? ? files.reverse : files)
   end

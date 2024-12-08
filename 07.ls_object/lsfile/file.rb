@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-module CustomFile
-  class File
-    require 'etc'
+require 'etc'
 
+module LsFile
+  class File
     AUTHORITIES = {
       '0' => '---',
       '1' => '--x',
