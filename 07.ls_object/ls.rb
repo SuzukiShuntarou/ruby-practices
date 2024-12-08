@@ -3,7 +3,6 @@
 
 require_relative 'lsoption/option'
 require_relative 'directory'
-require_relative 'directoryformatter'
 require_relative 'lsfile/file'
 
 class Ls
@@ -28,7 +27,7 @@ class Ls
     files = sorted_filenames.map do |filename|
       LsFile::File.new(filename)
     end
-    DirectoryFormatter.new(LsOption.reverse? ? files.reverse : files)
+    Directory.new(LsOption.reverse? ? files.reverse : files)
   end
 end
 
