@@ -1,11 +1,16 @@
 # frozen_string_literal: true
 
-class DirectoryFormatter < Directory
+class LsFormatter
   COLUMN_COUNT = 3
+
+  def initialize(files)
+    @files = files
+    @directory = Directory.new(files)
+  end
 
   def format(long_option)
     if long_option
-      ["total #{calculate_total_block_size}", build_long_format_files]
+      ["total #{@directory.calculate_total_block_size}", build_long_format_files]
     else
       build_short_format_files
     end
@@ -14,7 +19,7 @@ class DirectoryFormatter < Directory
   private
 
   def build_long_format_files
-    lengths = attributes_max_length
+    lengths = @directory.attributes_max_length
     @files.map do |file|
       [
         file.permission,
@@ -30,7 +35,7 @@ class DirectoryFormatter < Directory
 
   def build_short_format_files
     nested_files = build_nested_files
-    length = filename_max_length
+    length = @directory.filename_max_length
 
     nested_files.map do |files|
       files.map { |file| file&.name&.ljust(length + 2) }.join('')

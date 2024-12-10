@@ -3,7 +3,7 @@
 
 require_relative 'lsoption/option'
 require_relative 'directory'
-require_relative 'directoryformatter'
+require_relative 'lsformatter'
 require_relative 'lsfile/file'
 
 class Ls
@@ -12,16 +12,14 @@ class Ls
   end
 
   def show_file_list
-    directoryformatter = DirectoryFormatter.new(build_files)
-    puts directoryformatter.format(LsOption.long?)
+    lsformatter = LsFormatter.new(build_files)
+    puts lsformatter.format(LsOption.long?)
   end
 
   private
 
   def build_files
-    sort_filenames.map do |filename|
-      LsFile::File.new(filename)
-    end
+    sort_filenames.map { |filename| LsFile::File.new(filename) }
   end
 
   def sort_filenames

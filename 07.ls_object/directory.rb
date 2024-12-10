@@ -5,8 +5,6 @@ class Directory
     @files = files
   end
 
-  private
-
   def calculate_total_block_size
     @files.sum(&:block_size) / 2
   end
