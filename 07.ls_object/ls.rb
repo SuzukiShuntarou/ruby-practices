@@ -12,12 +12,19 @@ class Ls
   end
 
   def show_file_list
-    puts build_directory.format(LsOption.long?)
+    directoryformatter = DirectoryFormatter.new(build_files)
+    puts directoryformatter.format(LsOption.long?)
   end
 
   private
 
-  def build_directory
+  def build_files
+    sort_filenames.map do |filename|
+      LsFile::File.new(filename)
+    end
+  end
+
+  def sort_filenames
     filenames = LsOption.all? ? Dir.foreach('.').to_a : Dir.glob('*')
     sorted_filenames = filenames.sort_by do |filename|
       [
@@ -25,10 +32,7 @@ class Ls
         filename.match?(/^\.+$/) ? filename.count('.') : -filename.count('.')
       ]
     end
-    files = sorted_filenames.map do |filename|
-      LsFile::File.new(filename)
-    end
-    DirectoryFormatter.new(LsOption.reverse? ? files.reverse : files)
+    LsOption.reverse? ? sorted_filenames.reverse : sorted_filenames
   end
 end
 
