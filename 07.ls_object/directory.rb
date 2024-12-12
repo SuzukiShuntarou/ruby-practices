@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 class Directory
-  def initialize(files)
-    @files = files
+  attr_reader :files
+
+  def initialize(all_option)
+    paths = all_option ? Dir.foreach('.').to_a : Dir.glob('*')
+    @files = paths.map { |path| LsFile::File.new(path) }
   end
 
   def calculate_total_block_size
