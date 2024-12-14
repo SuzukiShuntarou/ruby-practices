@@ -5,7 +5,7 @@ class Directory
 
   def initialize(all_option)
     paths = all_option ? Dir.foreach('.').to_a : Dir.glob('*')
-    @files = paths.map { |path| LsFile::File.new(path) }
+    @files = paths.map { |path| LsFile.new(path) }
   end
 
   def calculate_total_block_size

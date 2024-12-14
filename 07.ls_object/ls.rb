@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require_relative 'lsoption'
+require_relative 'ls_option'
 require_relative 'directory'
-require_relative 'lsformatter'
-require_relative 'lsfile/file'
+require_relative 'ls_formatter'
+require_relative 'ls_file'
 
 class Ls
   def initialize(argv = nil)
