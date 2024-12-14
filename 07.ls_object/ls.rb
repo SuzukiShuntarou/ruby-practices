@@ -11,7 +11,7 @@ class Ls
     @argv = argv
   end
 
-  def show_file_list
+  def exec
     lsoption = LsOption.new(@argv)
     directory = Directory.new(lsoption.all?)
     lsformatter = LsFormatter.new(directory, lsoption.long?, lsoption.reverse?)
@@ -20,4 +20,4 @@ class Ls
 end
 
 ls = Ls.new(ARGV)
-ls.show_file_list
+ls.exec

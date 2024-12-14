@@ -56,4 +56,3 @@ class LsFile
     ::File.stat(@name)
   end
 end
-
