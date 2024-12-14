@@ -3,8 +3,8 @@
 class Directory
   attr_reader :files
 
-  def initialize(all_option)
-    paths = all_option ? Dir.foreach('.').to_a : Dir.glob('*')
+  def initialize(all)
+    paths = all ? Dir.foreach('.').to_a : Dir.glob('*')
     @files = paths.map { |path| LsFile.new(path) }
   end
 
