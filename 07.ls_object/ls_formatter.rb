@@ -11,7 +11,7 @@ class LsFormatter
 
   def format
     if @option_long
-      ["total #{@directory.calculate_total_block_size}", build_long_format_files]
+      "total #{@directory.calculate_total_block_size}\n#{build_long_format_files.join("\n")}"
     else
       build_short_format_files
     end
