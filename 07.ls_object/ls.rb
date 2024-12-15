@@ -12,10 +12,10 @@ class Ls
   end
 
   def exec
-    lsoption = LsOption.new(@argv)
-    directory = Directory.new(lsoption.all?)
-    lsformatter = LsFormatter.new(directory, lsoption.long?, lsoption.reverse?)
-    puts lsformatter.format
+    ls_option = LsOption.new(@argv)
+    directory = Directory.new(ls_option.all?)
+    ls_formatter = LsFormatter.new(directory, ls_option.long?, ls_option.reverse?)
+    puts ls_formatter.format
   end
 end
 
